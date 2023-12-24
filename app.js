@@ -1,64 +1,52 @@
-// Backend (server.js)
-const express = require('express');
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
-const app = express();
+// Importing necessary modules
+import React, { useState } from 'react'; // React for building the component and useState for managing local state
+import Papa from 'papaparse'; // Papa Parse for parsing CSV data
 
-app.post('/upload', upload.single('file'), (req, res) => {
-  // Handle the file upload and store the data in the database
-});
-
-app.get('/data', (req, res) => {
-  // Fetch the data from the database and send it as a response
-});
-
-app.put('/data/:id', (req, res) => {
-  // Update the data in the database based on the request body
-});
-
-app.listen(3000, () => console.log('Server started on port 3000'));
-
-// Frontend (App.js)
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
+// Defining the App component
 function App() {
+  // Using the useState hook to create a state variable 'data' and a function 'setData' to update it
   const [data, setData] = useState([]);
 
-  useEffect(() => {
-    axios.get('/data').then(res => setData(res.data));
-  }, []);
-
-  const handleUpload = event => {
+  // Defining a function to handle file uploads
+  const handleFileUpload = event => {
+    // Getting the uploaded file from the event object
     const file = event.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
 
-    axios.post('/upload', formData).then(() => {
-      // Refresh the data
-      axios.get('/data').then(res => setData(res.data));
+    // Using Papa Parse to parse the CSV file
+    Papa.parse(file, {
+      // When parsing is complete, this function will be called with the results
+      complete: (results) => {
+        // The parsed data is an array of arrays, each representing a row of the CSV
+        // We update our state with this data
+        setData(results.data);
+      },
+      // This option tells Papa Parse to treat the first row of the CSV as the header row
+      // and parse the rest of the CSV into objects using the header row for the property names
+      header: true
     });
   };
 
-  const handleUpdate = id => {
-    // Update the data
-    axios.put(`/data/${id}`).then(() => {
-      // Refresh the data
-      axios.get('/data').then(res => setData(res.data));
-    });
-  };
-
+  // The component's render method
   return (
     <div>
-      <input type="file" onChange={handleUpload} />
-      {data.map(item => (
-        <div key={item.id}>
-          {/* Display the data */}
-          <button onClick={() => handleUpdate(item.id)}>Update</button>
+      {/* An input element for file uploads. When a file is selected, handleFileUpload is called */}
+      <input type="file" onChange={handleFileUpload} />
+
+      {/* If there is any data, we map over it and display each row */}
+      {data.length > 0 && (
+        <div>
+          {/* Display the CSV data */}
+          {data.map((row, index) => (
+            // For each row, we create a <p> element with the row data as its content
+            // We use JSON.stringify to convert the row data (an object) into a string
+            // We also give each <p> element a key prop, which helps React optimize re-rendering
+            <p key={index}>{JSON.stringify(row)}</p>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
 
+// Exporting the App component so it can be imported and used in other files
 export default App;
